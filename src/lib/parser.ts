@@ -1,11 +1,8 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import mammoth from 'mammoth';
+import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
-// Set up the worker for pdfjs
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).toString();
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
 export async function parseFile(file: File): Promise<string> {
   const name = file.name.toLowerCase();
