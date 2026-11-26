@@ -9,16 +9,44 @@ interface FileUploadProps {
   error?: string;
 }
 
+const supportedExtensions = ['.pdf', '.docx', '.txt', '.md'];
+const supportedMimeTypes = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain',
+  'text/markdown',
+];
+
+function isSupportedFile(file: File): boolean {
+  const name = file.name.toLowerCase();
+  const hasSupportedExtension = supportedExtensions.some((extension) => name.endsWith(extension));
+  return hasSupportedExtension || supportedMimeTypes.includes(file.type);
+}
+
 export function FileUpload({ onFileSelected, selectedFile, onClear, parseStatus, error }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
+  const [inputError, setInputError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const acceptFile = useCallback((file: File) => {
+    if (!file.name || file.size === 0) {
+      setInputError('That file is empty or missing a filename. Choose another resume.');
+      return;
+    }
+    if (!isSupportedFile(file)) {
+      setInputError('Please choose a PDF, DOCX, TXT, or Markdown resume.');
+      return;
+    }
+    setInputError('');
+    onFileSelected(file);
+  }, [onFileSelected]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
-    if (file) onFileSelected(file);
-  }, [onFileSelected]);
+    if (file) acceptFile(file);
+  }, [acceptFile]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -90,12 +118,13 @@ export function FileUpload({ onFileSelected, selectedFile, onClear, parseStatus,
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0];
-            if (file) onFileSelected(file);
+            if (file) acceptFile(file);
+            e.target.value = '';
           }}
         />
       </div>
-      {error && (
-        <p className="mt-2 text-sm text-red-600">{error}</p>
+      {(inputError || error) && (
+        <p className="mt-2 text-sm text-red-600">{inputError || error}</p>
       )}
     </div>
   );
